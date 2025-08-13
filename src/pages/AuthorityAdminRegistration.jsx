@@ -8,6 +8,7 @@ const AdminRegistrationForm = () => {
   const authorityId = location.state?.authorityId;
 
   const [email, setEmail] = useState('');
+  const [authorityadminName, setauthorityadminName] = useState('');
   const [authorityEmail, setAuthorityEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -26,7 +27,8 @@ const AdminRegistrationForm = () => {
 
     setLoading(true);
     try {
-      const adminRes = await apiClient.post('/auth/admin/register', {
+      const adminRes = await apiClient.post('/auth/authority/admin/register', {
+        name:authorityadminName,
         email: email,
         password:password,
         authority_id:authorityId,
@@ -71,7 +73,18 @@ const AdminRegistrationForm = () => {
                 {error}
               </div>
             )}
-
+            {/*Name Input */}
+             <div>
+                <input
+                  type="text"
+                  id="authorityadminName"
+                  name="authorityadminName"
+                  value={authorityadminName}
+                  onChange={(e) => setauthorityadminName(e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none"
+                  placeholder="Enter authority Admin name"
+                />
+              </div>
             {/* Email Input */}
             <div>
               <input

@@ -1,9 +1,48 @@
 import React, { useState } from 'react';
 import { Plus, Copy, Trash2, Image, Video, Palette, Eye, Send, MoreVertical } from 'lucide-react';
 import RichTextEditor from '../../context/RitchTextEditorContext';
-
+import apiClient from '../../utils/apiClient';
+import FormViewer from './ViewForm';
+import NotificationModal from '../NotificationModal';
+// const formJson = {
+//   title: "<b>Untitled form</b>",
+//   description: "Form description",
+//   questions: [
+//     {
+//       id: 1,
+//       type: "multiple-choice",
+//       question: "Untitled Question",
+//       options: ["option qwe", "Optio"],
+//       required: true,
+//       hasOther: false
+//     },
+//     {
+//       id: 1755062144348,
+//       type: "checkboxes",
+//       question: "Untitled Question",
+//       options: ["Option 1", "Option 2"],
+//       required: false,
+//       hasOther: false
+//     },
+//     {
+//       id: 1755062182046,
+//       type: "multiple-choice",
+//       question: "Untitled Question",
+//       options: ["Option 1"],
+//       required: false,
+//       hasOther: false
+//     }
+//   ]
+// };
 
 const GoogleFormsClone = () => {
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [notificationType, setNotificationType] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [message, setMessage] = useState('');
+  const closeModal = () => setIsModalOpen(false);
+  const [progress, setProgress] = useState(null);
+
   const [form, setForm] = useState({
     title: 'Untitled form',
     description: 'Form description',
@@ -31,6 +70,41 @@ const GoogleFormsClone = () => {
     { value: 'date', label: 'Date' },
     { value: 'time', label: 'Time' }
   ];
+
+  // Function to export form data as JSON (ready for backend)
+  const exportFormData = async () => {
+    const formData = {
+      title: form.title,
+      description: form.description,
+      questions: form.questions.map(q => ({
+        id: q.id,
+        type: q.type,
+        question: q.question,
+        options: q.options,
+        required: q.required,
+        hasOther: q.hasOther
+      }))
+    };
+
+    try {
+      const formRes = await apiClient.post('/form/create', formData);
+
+      if (formRes.success) {
+        setNotificationType('success');
+        setMessage('Form created successfully!');
+      } else {
+        setNotificationType('error');
+        setMessage('Error: ' + formRes.data.message || 'Something went wrong!');
+      }
+    } catch (error) {
+      console.error('Error creating form:', error);
+      setNotificationType('error');
+      setMessage('Error: ' + error.message || 'An unexpected error occurred');
+    } finally {
+      setIsModalOpen(true);
+    }
+    return formData;
+  };
 
   const addQuestion = () => {
     const newQuestion = {
@@ -137,6 +211,7 @@ const GoogleFormsClone = () => {
     const isActive = activeQuestion === question.id;
 
     return (
+
       <div
         key={question.id}
         className={`bg-white rounded-lg border-l-4 mb-4 transition-all duration-200 ${isActive ? 'border-l-blue-500 shadow-md' : 'border-l-transparent shadow-sm hover:shadow-md'
@@ -315,8 +390,11 @@ const GoogleFormsClone = () => {
               </div>
               <input
                 type="text"
-                value={form.title}
-                onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
+                value={form.title.replace(/<[^>]*>/g, '')} // remove HTML tags
+                onChange={(e) => setForm(prev => ({
+                  ...prev,
+                  title: e.target.value.replace(/<[^>]*>/g, '')
+                }))}
                 className="text-lg font-medium border-none outline-none focus:border-b-2 focus:border-blue-500 bg-transparent"
               />
             </div>
@@ -324,13 +402,38 @@ const GoogleFormsClone = () => {
               <button className="p-2 text-gray-600 hover:bg-gray-100 rounded">
                 <Palette className="w-5 h-5" />
               </button>
-              <button className="p-2 text-gray-600 hover:bg-gray-100 rounded">
+              <button
+                onClick={() => setIsPreviewOpen(true)}
+                className="p-2 text-gray-600 hover:bg-gray-100 rounded">
                 <Eye className="w-5 h-5" />
               </button>
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2">
+              {isPreviewOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-3xl relative">
+                    <button
+                      onClick={() => setIsPreviewOpen(false)}
+                      className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                    >
+                      ✕
+                    </button>
+                    <FormViewer formData={form} />
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={exportFormData}
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2">
                 <Send className="w-4 h-4" />
                 Send
               </button>
+              <NotificationModal
+                type={notificationType}
+                message={message}
+                isOpen={isModalOpen}
+                onClose={closeModal}
+                progress={progress}
+              />
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, Copy, Trash2, Image, Video, Palette, Eye, Send, MoreVertical, GripVertical, Bold, Italic, Underline, Link, X } from 'lucide-react';
+import { Bold, Italic, Underline, Link, X } from 'lucide-react';
 
 const RichTextEditor = ({ type, value, onChange, placeholder, className }) => {
   const editorRef = useRef(null);
@@ -33,10 +33,14 @@ const RichTextEditor = ({ type, value, onChange, placeholder, className }) => {
     onChange(editorRef.current.innerHTML);
   };
 
-  const handleBlur = () => {
-    // Small delay to allow toolbar clicks to register
+  const handleBlur = (e) => {
+    // If blur happened because of clicking inside the toolbar, ignore it
+    if (e.relatedTarget && e.relatedTarget.closest('.richtext-toolbar')) {
+      return;
+    }
     setTimeout(() => setIsFocused(false), 150);
   };
+
 
   // Only update content if it's different from current content
   useEffect(() => {
@@ -72,7 +76,7 @@ const RichTextEditor = ({ type, value, onChange, placeholder, className }) => {
 
   return (
     <div>
-       
+
       {/* Editable Area */}
       <div
         ref={editorRef}
@@ -88,7 +92,7 @@ const RichTextEditor = ({ type, value, onChange, placeholder, className }) => {
         }}
         data-placeholder={placeholder}
       />
-      
+
       <style jsx>{`
         [contenteditable]:empty:before {
           content: attr(data-placeholder);
@@ -99,34 +103,36 @@ const RichTextEditor = ({ type, value, onChange, placeholder, className }) => {
 
       {/* Toolbar */}
       {isFocused && (
-        <div className="flex gap-2 mb-2 text-gray-600 border-b pb-2">
-          <ToolbarButton 
-            onClick={() => format('bold')} 
-            icon={Bold} 
-            tooltip="Bold" 
+        <div className="flex gap-2 mb-2 text-gray-600 border-b pb-2 richtext-toolbar"
+          tabIndex="-1"
+        >
+          <ToolbarButton
+            onClick={() => format('bold')}
+            icon={Bold}
+            tooltip="Bold"
           />
-          <ToolbarButton 
-            onClick={() => format('italic')} 
-            icon={Italic} 
-            tooltip="Italic" 
+          <ToolbarButton
+            onClick={() => format('italic')}
+            icon={Italic}
+            tooltip="Italic"
           />
-          <ToolbarButton 
-            onClick={() => format('underline')} 
-            icon={Underline} 
-            tooltip="Underline" 
+          <ToolbarButton
+            onClick={() => format('underline')}
+            icon={Underline}
+            tooltip="Underline"
           />
-          <ToolbarButton 
+          <ToolbarButton
             onClick={() => {
               const url = prompt("Enter link:");
               if (url) format('createLink', url);
-            }} 
-            icon={Link} 
-            tooltip="Link" 
+            }}
+            icon={Link}
+            tooltip="Link"
           />
-          <ToolbarButton 
-            onClick={() => format('removeFormat')} 
-            icon={X} 
-            tooltip="Clear Format" 
+          <ToolbarButton
+            onClick={() => format('removeFormat')}
+            icon={X}
+            tooltip="Clear Format"
           />
         </div>
       )}
