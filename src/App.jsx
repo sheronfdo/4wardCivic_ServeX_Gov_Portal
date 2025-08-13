@@ -4,7 +4,7 @@ import { AuthContext, AuthProvider } from './context/AuthContext';
 import GovernmentPortal from './pages/home';
 import Layout from './components/Layout';
 import LoginPage from './pages/Login';
-import AdminRegistartionForm from './pages/AdminRegistration';
+import AdminRegistrationForm from './pages/AuthorityAdminRegistration';
 import AuthorityRegistrationForm from './pages/AuthorityRegistration';
 import Dashboard from './pages/Dashboard';
 import Services from './pages/Services';
@@ -28,7 +28,7 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/admin-registration" element={<AdminRegistartionForm />} />
+          <Route path="/admin-registration" element={<AdminRegistrationForm/>} />
           <Route path="/authority-registration" element={<AuthorityRegistrationForm />} />
           <Route path="/" element={<AuthRedirect />} />
           {/* Layout routes - these will render inside the Layout component */}
