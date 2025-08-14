@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard';
 import Services from './pages/Services';
 import Task from './pages/Task';
 import VerifyEmail from './pages/VerifyEmail';
+import ProtectedRoute from './components/ProtectedRoute';
 const AuthRedirect = () => {
   const { isAuthenticated, isLoading } = useContext(AuthContext);
 
@@ -35,9 +36,9 @@ function App() {
           <Route path="/" element={<AuthRedirect />} />
           {/* Layout routes - these will render inside the Layout component */}
           <Route element={<Layout />}>
-            <Route path="/dashboard" element={<Dashboard />} /> {/* Fixed path */}
-            <Route path="/services" element={<Services />}/>
-            <Route path="/tasks" element={<Task/>} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} /> {/* Fixed path */}
+            <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>}/>
+            <Route path="/tasks" element={<ProtectedRoute><Task/></ProtectedRoute>} />
             <Route path="/profile" element={<h1>Profile Page</h1>} />
             <Route path="/settings" element={<h1>Settings Page</h1>} />
           </Route>
