@@ -1,11 +1,13 @@
-import React, { useState ,useEffect} from 'react';
+import React, { useState ,useEffect, useContext} from 'react';
 import { Plus, Edit, Trash2, Eye, X, ArrowLeft } from 'lucide-react';
 import AddService from '../components/Services/AddServices';
 import ManageForms from '../components/Form/ManageForm';
 import apiClient from '../utils/apiClient';
+import { AuthContext } from '../context/AuthContext';
 
 // Main Services Component
 const Services = () => {
+  const {token} = useContext(AuthContext);
   const [services, setServices] = useState([]);
   const [showAddService, setShowAddService] = useState(false);
   const [showViewService, setShowViewService] = useState(false);
@@ -19,13 +21,14 @@ const Services = () => {
     status: 'Active'
   });
 
+
   useEffect(() => {
     fetchServices();
   }, []);
 
  const fetchServices = async () => {
   try {
-    const res = await apiClient.get('/service/services');
+    const res = await apiClient.get('/service/services', token);
     if (Array.isArray(res)) {
       setServices(res);
     } else {
