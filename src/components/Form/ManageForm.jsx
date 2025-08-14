@@ -3,7 +3,7 @@ import { Plus, User, ArrowLeft, Eye, Edit, Trash2 } from 'lucide-react';
 import GoogleFormsClone from './AddForm';
 import apiClient from '../../utils/apiClient';
 import FormViewer from './ViewForm';
-
+import {ClockLoader} from 'react-spinners';
 // Update the main component to use the enhanced version
 const ManageForms = ({ onBack, serviceId }) => {
   const [serviceDetails, setServiceDetails] = useState(null);
@@ -11,26 +11,52 @@ const ManageForms = ({ onBack, serviceId }) => {
   const [editingForm, setEditingForm] = useState(null);
   const [forms, setForms] = useState([]);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  useEffect(() => {
-    if (!serviceId) return;
-    apiClient.get(`/service/services/${serviceId}`)
-      .then(res => setServiceDetails(res))
-      .catch(err => console.error('Error fetching service details:', err));
-  }, [serviceId]);
-  useEffect(() => {
-    if (!serviceId) return;
-    apiClient.get(`/form/forms/${serviceId}`)
-      .then(formres => setForms(formres.forms))
-      .catch(err => console.error('Error fetching service details:', err));
-  }, [serviceId]);
+  // useEffect(() => {
+  //   if (!serviceId) return;
+  //   apiClient.get(`/service/services/${serviceId}`)
+  //     .then(res => setServiceDetails(res))
+  //     .catch(err => console.error('Error fetching service details:', err));
+  // }, [serviceId]);
+  // useEffect(() => {
+  //   if (!serviceId) return;
+  //   apiClient.get(`/form/forms/${serviceId}`)
+  //     .then(formres => setForms(formres.forms))
+  //     .catch(err => console.error('Error fetching service details:', err));
+  // }, [serviceId]);
 
+  const fetchServiceandForm = async () => {
+  try {
+    if (!serviceId) return;
+
+    const [res, formRes] = await Promise.all([
+      apiClient.get(`/service/services/${serviceId}`),
+      apiClient.get(`/form/forms/${serviceId}`)
+    ]);
+
+    setServiceDetails(res);
+    setForms(formRes.forms);
+  } catch (err) {
+    console.error('Error fetching service or forms:', err);
+  }
+};
+
+useEffect(() => {
+  fetchServiceandForm();
+}, [serviceId]);
 
   if (!serviceId) {
     return <div>No service selected.</div>;
   }
 
   if (!serviceDetails) {
-    return <div>Loading service details...</div>;
+    return <ClockLoader
+        className="mx-auto my-40"
+        color="#3b82f6"
+        loading={true}
+        size={122}
+        aria-label="Loading Spinner"
+        data-testid="loader"
+      />;
   }
 
 
@@ -46,6 +72,8 @@ const ManageForms = ({ onBack, serviceId }) => {
   const handleBackToForms = () => {
     setShowAddForm(false);
     setEditingForm(null);
+    fetchServiceandForm();
+
   };
 
   const handleFormCreated = (newForm) => {
@@ -184,8 +212,13 @@ const ManageForms = ({ onBack, serviceId }) => {
                     <p className="text-sm text-gray-600 mb-2">Form Title</p>
                     <div className="grid grid-cols-5 gap-8 items-start">
                       <div>
-                        <p className="font-medium text-gray-800 mb-1">{form.title}</p>
-                        <p className="text-sm text-gray-600">{form.description}</p>
+                        <p className="font-medium text-gray-800 mb-1">
+                          {form.title.replace(/<[^>]*>?/gm, '')}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {form.description.replace(/<[^>]*>?/gm, '')}
+                        </p>
+
                       </div>
                       <div>
                         <p className="text-gray-800">{form.is_active ? 'Active' : 'Inactive'}</p>

@@ -47,65 +47,89 @@ export default function FormViewer({ formData }) {
           key={q.id}
           className="bg-white shadow-sm rounded-lg p-5 mb-4 border border-gray-200"
         >
-          <h2 className="font-medium mb-3">{q.question}</h2>
+          <h2 className="font-medium mb-3">
+            {q.question}
+            {q.required && <span className="text-red-500 ml-1">*</span>}
+          </h2>
 
           {/* Multiple choice */}
-          {q.type === "multiple-choice" &&
-            q.options.map((opt, idx) => (
-              <label
-                key={idx}
-                className="flex items-center mb-2 cursor-pointer"
-              >
-                <input
-                  type="radio"
-                  name={`q-${q.id}`}
-                  value={opt}
-                  checked={answers[q.id] === opt}
-                  onChange={() => handleChange(q.id, opt, false)}
-                  className="mr-2"
-                />
-                {opt}
-              </label>
-            ))}
-
-          {/* Checkboxes */}
-          {q.type === "checkboxes" &&
-            q.options.map((opt, idx) => (
-              <label
-                key={idx}
-                className="flex items-center mb-2 cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  name={`q-${q.id}`}
-                  value={opt}
-                  checked={answers[q.id]?.includes(opt) || false}
-                  onChange={() => handleChange(q.id, opt, true)}
-                  className="mr-2"
-                />
-                {opt}
-              </label>
-            ))}
-
-          {/* Short answer */}
-          {q.type === "short-answer" && (
-            <input
-              type="text"
-              placeholder="Short answer text"
-              value={answers[q.id] || ""}
-              onChange={(e) => handleChange(q.id, e.target.value, false)}
-              className="border-b border-gray-300 w-full focus:outline-none"
-            />
+          {q.type === "multiple-choice" && (
+            <div className="space-y-2">
+              {q.options.map((opt, idx) => (
+                <label
+                  key={idx}
+                  className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded"
+                >
+                  <input
+                    type="radio"
+                    name={`q-${q.id}`}
+                    value={opt}
+                    checked={answers[q.id] === opt}
+                    onChange={() => handleChange(q.id, opt, false)}
+                    className="mr-3 w-4 h-4 text-blue-600"
+                  />
+                  <span>{opt}</span>
+                </label>
+              ))}
+              {q.hasOther && (
+                <label className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
+                  <input
+                    type="radio"
+                    name={`q-${q.id}`}
+                    value="other"
+                    checked={answers[q.id] === "other"}
+                    onChange={() => handleChange(q.id, "other", false)}
+                    className="mr-3 w-4 h-4 text-blue-600"
+                  />
+                  <span>Other:</span>
+                  <input
+                    type="text"
+                    placeholder="Please specify"
+                    className="ml-2 border-b border-gray-300 focus:outline-none focus:border-blue-500 bg-transparent"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </label>
+              )}
+            </div>
           )}
 
-          {/* Paragraph */}
-          {q.type === "paragraph" && (
-            <textarea
-              placeholder="Long answer text"
-              value={answers[q.id] || ""}
-              onChange={(e) => handleChange(q.id, e.target.value, false)}
-              className="border border-gray-300 rounded-md w-full p-2"
-            />
+          {/* Checkboxes */}
+          {q.type === "checkboxes" && (
+            <div className="space-y-2">
+              {q.options.map((opt, idx) => (
+                <label
+                  key={idx}
+                  className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded"
+                >
+                  <input
+                    type="checkbox"
+                    name={`q-${q.id}`}
+                    value={opt}
+                    checked={answers[q.id]?.includes(opt) || false}
+                    onChange={() => handleChange(q.id, opt, true)}
+                    className="mr-3 w-4 h-4 text-blue-600 rounded"
+                  />
+                  <span>{opt}</span>
+                </label>
+              ))}
+              {q.hasOther && (
+                <label className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
+                  <input
+                    type="checkbox"
+                    name={`q-${q.id}-other`}
+                    className="mr-3 w-4 h-4 text-blue-600 rounded"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <span>Other:</span>
+                  <input
+                    type="text"
+                    placeholder="Please specify"
+                    className="ml-2 border-b border-gray-300 focus:outline-none focus:border-blue-500 bg-transparent"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </label>
+              )}
+            </div>
           )}
 
           {/* Dropdown */}
@@ -113,7 +137,7 @@ export default function FormViewer({ formData }) {
             <select
               value={answers[q.id] || ""}
               onChange={(e) => handleChange(q.id, e.target.value, false)}
-              className="border border-gray-300 rounded-md p-2"
+              className="border border-gray-300 rounded-md p-2 w-full max-w-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">Choose</option>
               {q.options.map((opt, idx) => (
@@ -124,11 +148,96 @@ export default function FormViewer({ formData }) {
             </select>
           )}
 
-          {q.required && (
-            <p className="text-red-500 text-xs mt-2">* Required</p>
+          {/* Linear Scale */}
+          {q.type === "linear-scale" && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">{q.minLabel || q.scaleMin}</span>
+                <div className="flex items-center gap-4">
+                  {Array.from({ length: q.scaleMax - q.scaleMin + 1 }, (_, i) => {
+                    const value = q.scaleMin + i;
+                    return (
+                      <label key={value} className="flex flex-col items-center cursor-pointer">
+                        <input
+                          type="radio"
+                          name={`q-${q.id}`}
+                          value={value}
+                          checked={answers[q.id] == value}
+                          onChange={() => handleChange(q.id, value, false)}
+                          className="w-4 h-4 text-blue-600 mb-1"
+                        />
+                        <span className="text-xs text-gray-500">{value}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <span className="text-sm text-gray-600">{q.maxLabel || q.scaleMax}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Short answer */}
+          {q.type === "short-answer" && (
+            <input
+              type="text"
+              placeholder="Your answer"
+              value={answers[q.id] || ""}
+              onChange={(e) => handleChange(q.id, e.target.value, false)}
+              className="border-b border-gray-300 w-full py-2 focus:outline-none focus:border-blue-500 bg-transparent"
+            />
+          )}
+
+          {/* Paragraph */}
+          {q.type === "paragraph" && (
+            <textarea
+              placeholder="Your answer"
+              value={answers[q.id] || ""}
+              onChange={(e) => handleChange(q.id, e.target.value, false)}
+              rows={4}
+              className="border border-gray-300 rounded-md w-full p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+            />
+          )}
+
+          {/* Date */}
+          {q.type === "date" && (
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={answers[q.id] || ""}
+                onChange={(e) => handleChange(q.id, e.target.value, false)}
+                className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <span className="text-sm text-gray-500">Select a date</span>
+            </div>
+          )}
+
+          {/* Time */}
+          {q.type === "time" && (
+            <div className="flex items-center gap-2">
+              <input
+                type="time"
+                value={answers[q.id] || ""}
+                onChange={(e) => handleChange(q.id, e.target.value, false)}
+                className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <span className="text-sm text-gray-500">Select a time</span>
+            </div>
           )}
         </div>
       ))}
+
+      {/* Submit Button */}
+      <div className="flex justify-center mt-8">
+        <button
+          onClick={() => {
+            console.log("Form Answers:", answers);
+            alert("This is only For Preview. No submission will happen.");
+          }}
+          className="bg-blue-600 text-white px-8 py-3 rounded-md hover:bg-blue-700 transition-colors font-medium"
+        >
+          Submit
+        </button>
+      </div>
     </div>
   );
 }
