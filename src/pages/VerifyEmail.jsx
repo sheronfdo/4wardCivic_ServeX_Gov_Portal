@@ -1,4 +1,4 @@
-import React, { useEffect, useState,useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import apiClient from '../utils/apiClient';
 import NotificationModal from '../components/NotificationModal';
@@ -34,16 +34,38 @@ const VerifyEmail = () => {
             try {
                 const endpoint = type === 'authority' ? '/authority/verify-email' : '/authority/admin/verify-email';
                 const res = await apiClient.get(`/auth${endpoint}?token=${token}`);
-                setModalState({
-                    isOpen: true,
-                    type: 'success',
-                    message: res.message || 'Email verified successfully. Redirecting...',
-                });
-                setTimeout(() => {
-                    navigate(type === 'authority' ? '/authority-admin-registration' : '/login', {
-                        state: type === 'authority' ? { authorityId: res.authority_id } : {},
+                if (res.authority_id) {
+                    setModalState({
+                        isOpen: true,
+                        type: 'success',
+                        message: 'Email verified successfully. Redirecting...',
                     });
-                }, 3000);
+                    setTimeout(() => {
+                        navigate(type === 'authority' ? '/authority-admin-registration' : '/login', {
+                            state: type === 'authority' ? { authorityId: res.authority_id } : {},
+                        });
+                    }, 3000);
+                } else if (res.user_id) {
+                    setModalState({
+                        isOpen: true,
+                        type: 'success',
+                        message: 'Email verified successfully. Redirecting...',
+                    });
+                    setTimeout(() => {
+                        navigate(type === 'authority' ? '/authority-admin-registration' : '/login', {
+                            state: type === 'authority' ? { authorityId: res.authority_id } : {},
+                        });
+                    }, 3000);
+                } else {
+                    setModalState({
+                        isOpen: true,
+                        type: 'error',
+                        message: res.message || 'Verification failed',
+                    });
+                    setTimeout(() => {
+                        navigate('/');
+                    }, 3000);
+                }
             } catch (error) {
                 setModalState({
                     isOpen: true,

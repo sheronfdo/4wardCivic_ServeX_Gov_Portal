@@ -14,7 +14,7 @@ export const AuthProvider = ({ children }) => {
   if (storedToken && storedUser) {
     try {
       initialUser = JSON.parse(storedUser);
-      initialAuthenticated = initialUser?.role === 'Admin'; // Only admins are authenticated
+      initialAuthenticated = initialUser?.role === 'GovAdmin'; // Only admins are authenticated
       console.log('AuthProvider: Initial auth from localStorage', {
         storedToken,
         initialUser,
@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
       if (storedToken && initialUser) {
         try {
           const data = await apiClient.get('/auth/validate', storedToken);
-          if (data.valid && data.user.role === 'Admin') {
+          if (data.valid && data.user.role === 'GovAdmin') {
             console.log('AuthProvider: Token validated', data.user); // Debugging
             setIsAuthenticated(true);
             setUser(data.user);
@@ -80,8 +80,8 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const data = await apiClient.post('/auth/login', { email, password });
-      if (data.user.role !== 'Admin') {
-        throw new Error('Access denied: Admins only');
+      if (data.user.role !== 'GovAdmin') {
+        throw new Error('Access denied: Government Authority Admins only');
       }
       setToken(data.token);
       setUser(data.user);
