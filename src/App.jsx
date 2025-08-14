@@ -9,6 +9,7 @@ import AuthorityRegistrationForm from './pages/AuthorityRegistration';
 import Dashboard from './pages/Dashboard';
 import Services from './pages/Services';
 import Task from './pages/Task';
+import VerifyEmail from './pages/VerifyEmail';
 const AuthRedirect = () => {
   const { isAuthenticated, isLoading } = useContext(AuthContext);
 
@@ -28,8 +29,9 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/admin-registration" element={<AdminRegistrationForm/>} />
+          <Route path="/authority-admin-registration" element={<AdminRegistrationForm/>} />
           <Route path="/authority-registration" element={<AuthorityRegistrationForm />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/" element={<AuthRedirect />} />
           {/* Layout routes - these will render inside the Layout component */}
           <Route element={<Layout />}>

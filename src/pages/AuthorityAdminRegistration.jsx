@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { useLocation ,useNavigate} from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import apiClient from '../utils/apiClient';
+import NotificationModal from '../components/NotificationModal';
 
 const AdminRegistrationForm = () => {
   const navigate = useNavigate();
@@ -9,44 +10,84 @@ const AdminRegistrationForm = () => {
 
   const [email, setEmail] = useState('');
   const [authorityadminName, setauthorityadminName] = useState('');
-  const [authorityEmail, setAuthorityEmail] = useState('');
+  // const [authorityEmail, setAuthorityEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  
+
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    type: 'loading',
+    message: '',
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setModalState({
+        isOpen: true,
+        type: 'error',
+        message: 'Passwords do not match',
+      });
       return;
     }
 
     setLoading(true);
     try {
       const adminRes = await apiClient.post('/auth/authority/admin/register', {
-        name:authorityadminName,
+        name: authorityadminName,
         email: email,
-        password:password,
-        authority_id:authorityId,
-        authority_email:authorityEmail,
+        password: password,
+        authority_id: authorityId,
+        // authority_email:authorityEmail,
       });
-      if (adminRes.user.id) {
-        navigate('/login');
-        // Optionally reset form here
+      if (adminRes.user) {
+        if (adminRes.is_verification_needed) {
+          setModalState({
+            isOpen: true,
+            type: 'success',
+            message: 'Admin registered successfully. Verification email sent. Please check your ' + adminRes.user.email + '\'s inbox.',
+          });
+          setTimeout(() => {
+            navigate('/login');
+          }, 3000);
+        } else {
+          setModalState({
+            isOpen: true,
+            type: 'success',
+            message: 'Admin registered successfully. Redirecting to login...',
+          });
+          setTimeout(() => {
+            navigate('/login');
+          }, 3000);
+        }
       }
     } catch (err) {
-      setError(err.message || 'Registration failed');
+      setModalState({
+        isOpen: true,
+        type: 'error',
+        message: err.message || 'Registration failed',
+      });
     } finally {
       setLoading(false);
     }
   };
 
+  const closeModal = () => {
+    setModalState((prev) => ({ ...prev, isOpen: false }));
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <NotificationModal
+        isOpen={modalState.isOpen}
+        type={modalState.type}
+        message={modalState.message}
+        onClose={closeModal}
+      />
       <div className="w-full max-w-md">
         {/* Header with logo */}
         <div className="text-center mb-8">
@@ -74,17 +115,17 @@ const AdminRegistrationForm = () => {
               </div>
             )}
             {/*Name Input */}
-             <div>
-                <input
-                  type="text"
-                  id="authorityadminName"
-                  name="authorityadminName"
-                  value={authorityadminName}
-                  onChange={(e) => setauthorityadminName(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none"
-                  placeholder="Enter authority Admin name"
-                />
-              </div>
+            <div>
+              <input
+                type="text"
+                id="authorityadminName"
+                name="authorityadminName"
+                value={authorityadminName}
+                onChange={(e) => setauthorityadminName(e.target.value)}
+                className="w-full px-4 py-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none"
+                placeholder="Enter authority Admin name"
+              />
+            </div>
             {/* Email Input */}
             <div>
               <input
@@ -99,7 +140,7 @@ const AdminRegistrationForm = () => {
               />
             </div>
 
-            {/* Authority Email Input (only if no authorityId) */}
+            {/* Authority Email Input (only if no authorityId)
             {!authorityId && (
               <div>
                 <input
@@ -113,7 +154,7 @@ const AdminRegistrationForm = () => {
                   className="w-full px-4 py-3 rounded-md border border-blue-400 bg-blue-400 bg-opacity-50 text-white placeholder-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent disabled:opacity-50"
                 />
               </div>
-            )}
+            )} */}
 
             {/* Password Input */}
             <div>
@@ -155,8 +196,8 @@ const AdminRegistrationForm = () => {
 
           {/* Additional Options */}
           <div className="mt-6 text-center">
-            <a 
-              href="#" 
+            <a
+              href="#"
               className="text-blue-100 hover:text-white text-sm underline transition duration-200"
             >
               Forgot your password?

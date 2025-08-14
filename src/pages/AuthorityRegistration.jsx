@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building2, Upload } from 'lucide-react';
 import apiClient from '../utils/apiClient';
+import NotificationModal from '../components/NotificationModal';
 
 const AuthorityRegistrationForm = () => {
   const navigate = useNavigate();
@@ -16,6 +17,11 @@ const AuthorityRegistrationForm = () => {
 
   const [uploading, setUploading] = useState(false); // for loading state
   const [selectedFileName, setSelectedFileName] = useState('');
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    type: 'loading',
+    message: '',
+  });
 
   // Handle text input
   const handleInputChange = (e) => {
@@ -56,7 +62,7 @@ const AuthorityRegistrationForm = () => {
       setUploading(false);
     }
   };
-  
+
   // Handle form submission
   const handleSubmit = async () => {
     try {
@@ -69,18 +75,48 @@ const AuthorityRegistrationForm = () => {
         authorityIconId: formData.authorityIconId, // send uploaded image ID
       });
 
-      if (authorityRes.id) {
-        console.log('Authority registered:', authorityRes.data);
-        navigate('/admin-registration', { state: { authorityId:authorityRes.id  } });
-        // Optionally reset form here
+      if (authorityRes.authority_id) {
+        console.log('Authority registered:', authorityRes);
+        setModalState({
+          isOpen: true,
+          type: 'success',
+          message: 'Authority registered successfully. Please check your email for verification.',
+        });
+        setFormData(({
+          authorityName: '',
+          email: '',
+          address: '',
+          phoneNumber: '',
+          hotline: '',
+          authorityIconId: null, // store uploaded image ID
+        }))
+        setTimeout(() => {
+          navigate('/');
+        }, 5000);
+        // setSuccess('Authority registered successfully. Please check your email for verification.');
       }
     } catch (error) {
       console.error('Error registering authority:', error);
+      setModalState({
+        isOpen: true,
+        type: 'error',
+        message: error.message || 'Registration failed',
+      });
     }
+  };
+
+  const closeModal = () => {
+    setModalState((prev) => ({ ...prev, isOpen: false }));
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <NotificationModal
+        isOpen={modalState.isOpen}
+        type={modalState.type}
+        message={modalState.message}
+        onClose={closeModal}
+      />
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-500 rounded-lg mb-4">
