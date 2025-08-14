@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Menu, X, BarChart3, Settings, User, CheckSquare, Grid3X3, Bell, Search } from 'lucide-react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
-
+import ServeX from '../assets/logo/ServeX.png'
 // Layout Component
 const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -15,16 +15,25 @@ const Layout = () => {
     { icon: User, label: 'Profile', path: '/profile' },
     { icon: Settings, label: 'Settings', path: '/settings' },
   ];
-
+  const handleImageClick = () => {
+    navigate('/'); // Navigate to home
+  };
+  
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-blue-500 to-blue-600 transform transition-transform duration-300 ease-in-out ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } lg:translate-x-0 lg:static lg:inset-0`}
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-blue-500 to-blue-600 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          } lg:translate-x-0 lg:static lg:inset-0`}
       >
         <div className="flex items-center justify-between p-4 border-b border-blue-400">
+          <div 
+          onClick={handleImageClick}
+          className="w-20 h-10 bg-gray-800 rounded-full flex items-center justify-center">
+              <img
+                src={ServeX} alt="Description of the image"
+                className="w-10 h-10 md:w-15 md:h-15  flex items-center justify-center" />
+            </div>
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
               {(() => {
@@ -52,11 +61,10 @@ const Layout = () => {
                   navigate(item.path);
                   setSidebarOpen(false);
                 }}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                  isActive
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${isActive
                     ? 'bg-blue-700 text-white'
                     : 'text-blue-100 hover:bg-blue-700 hover:text-white'
-                }`}
+                  }`}
               >
                 <item.icon className="w-5 h-5" />
                 <span>{item.label}</span>

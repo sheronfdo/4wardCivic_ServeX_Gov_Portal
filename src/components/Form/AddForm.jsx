@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Copy, Trash2, Image, Video, Palette, Eye, Send, MoreVertical } from 'lucide-react';
+import { Plus, Copy, Trash2, Image, Video, Palette, Eye, Send, MoreVertical,ArrowLeft } from 'lucide-react';
 import RichTextEditor from '../../context/RitchTextEditorContext';
 import apiClient from '../../utils/apiClient';
 import FormViewer from './ViewForm';
@@ -35,7 +35,7 @@ import NotificationModal from '../NotificationModal';
 //   ]
 // };
 
-const GoogleFormsClone = () => {
+const GoogleFormsClone = (serviceId, onBack,) => {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [notificationType, setNotificationType] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -46,6 +46,7 @@ const GoogleFormsClone = () => {
   const [form, setForm] = useState({
     title: 'Untitled form',
     description: 'Form description',
+    serviceId: serviceId.serviceId,
     questions: [
       {
         id: 1,
@@ -76,6 +77,7 @@ const GoogleFormsClone = () => {
     const formData = {
       title: form.title,
       description: form.description,
+      serviceId: serviceId.serviceId,
       questions: form.questions.map(q => ({
         id: q.id,
         type: q.type,
@@ -385,6 +387,12 @@ const GoogleFormsClone = () => {
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
+              <button
+                onClick={onBack}
+                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
               <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                 <div className="w-4 h-4 bg-white rounded-sm"></div>
               </div>

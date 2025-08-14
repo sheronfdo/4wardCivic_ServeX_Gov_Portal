@@ -1,38 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState ,useEffect} from 'react';
 import { Plus, Edit, Trash2, Eye, X, ArrowLeft } from 'lucide-react';
 import AddService from '../components/Services/AddServices';
 import ManageForms from '../components/Form/ManageForm';
-
+import apiClient from '../utils/apiClient';
 
 // Main Services Component
 const Services = () => {
-  const [services, setServices] = useState([
-    {
-      id: 1,
-      serviceName: 'Birth Certificate',
-      serviceType: 'Civil Registration',
-      description: 'Issue birth certificates for citizens',
-      status: 'Active',
-      createdDate: '2024-01-15'
-    },
-    {
-      id: 2,
-      serviceName: 'Business License',
-      serviceType: 'Business Registration',
-      description: 'Register new businesses and issue licenses',
-      status: 'Active',
-      createdDate: '2024-01-20'
-    },
-    {
-      id: 3,
-      serviceName: 'Passport Application',
-      serviceType: 'Immigration',
-      description: 'Process passport applications for citizens',
-      status: 'Inactive',
-      createdDate: '2024-02-01'
-    }
-  ]);
-
+  const [services, setServices] = useState([]);
   const [showAddService, setShowAddService] = useState(false);
   const [showViewService, setShowViewService] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -45,16 +19,25 @@ const Services = () => {
     status: 'Active'
   });
 
-  const serviceTypes = [
-    'Civil Registration',
-    'Business Registration',
-    'Immigration',
-    'Healthcare',
-    'Education',
-    'Transportation',
-    'Tax Services',
-    'Other'
-  ];
+  useEffect(() => {
+    fetchServices();
+  }, []);
+
+ const fetchServices = async () => {
+  try {
+    const res = await apiClient.get('/service/services');
+    if (Array.isArray(res)) {
+      setServices(res);
+    } else {
+      console.error('Unexpected response format:', res);
+      setServices([]);
+    }
+  } catch (error) {
+    console.error('Error fetching services:', error);
+    setServices([]);
+  }
+};
+
 
   const handleAdd = () => {
     setShowAddService(true);
@@ -63,29 +46,29 @@ const Services = () => {
   const handleBackToServices = () => {
     setShowAddService(false);
     setShowViewService(false);
+    fetchServices();
   };
 
   const handleServiceCreated = (newService) => {
     setServices([...services, newService]);
+    fetchServices();
   };
 
   const handleEdit = (service) => {
     setModalType('edit');
     setSelectedService(service);
     setFormData({
-      serviceName: service.serviceName,
-      serviceType: service.serviceType,
-      description: service.description,
+      serviceName: service.service_name,
+      serviceType: service.service_type || 'N/A', // fallback if service_type doesn't exist
+      description: service.note,
       status: service.status
     });
     setShowModal(true);
   };
 
   const handleView = (service) => {
+    setSelectedService(service);
     setShowViewService(true)
-    //setModalType('view');
-    //setSelectedService(service);
-    //setShowModal(true);
   };
 
   const handleDelete = (serviceId) => {
@@ -94,26 +77,21 @@ const Services = () => {
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (modalType === 'edit') {
-      setServices(services.map(service => 
-        service.id === selectedService.id 
-          ? { ...service, ...formData }
-          : service
-      ));
-    }
-    
-    setShowModal(false);
-  };
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+  };
+
+  // Format date helper function
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: '2-digit'
+    });
   };
 
   // Show AddService component
@@ -129,6 +107,7 @@ const Services = () => {
     return(
       <ManageForms
         onBack={handleBackToServices}
+        serviceId={selectedService?.id}
       />
     )
   }
@@ -173,10 +152,10 @@ const Services = () => {
               {services.map((service) => (
                 <tr key={service.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                    {service.serviceName}
+                    {service.service_name}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">
-                    {service.serviceType}
+                    {service.service_type || 'General Service'}
                   </td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -188,7 +167,7 @@ const Services = () => {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">
-                    {service.createdDate}
+                    {formatDate(service.created_at)}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end space-x-2">
@@ -227,129 +206,6 @@ const Services = () => {
           </div>
         )}
       </div>
-
-      {/* Modal for Edit/View */}
-      {/* {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">
-                {modalType === 'edit' && 'Edit Service'}
-                {modalType === 'view' && 'Service Details'}
-              </h3>
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {modalType === 'view' ? (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Service Name</label>
-                  <p className="text-gray-900">{selectedService?.serviceName}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Service Type</label>
-                  <p className="text-gray-900">{selectedService?.serviceType}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                  <p className="text-gray-900">{selectedService?.description}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    selectedService?.status === 'Active' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {selectedService?.status}
-                  </span>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Created Date</label>
-                  <p className="text-gray-900">{selectedService?.createdDate}</p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Service Name</label>
-                  <input
-                    type="text"
-                    name="serviceName"
-                    value={formData.serviceName}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Service Type</label>
-                  <select
-                    name="serviceType"
-                    value={formData.serviceType}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  >
-                    <option value="">Select service type</option>
-                    {serviceTypes.map((type) => (
-                      <option key={type} value={type}>{type}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                  <textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
-                </div>
-
-                <div className="flex justify-end space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowModal(false)}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSubmit}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
-                  >
-                    Save Changes
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )} */}
     </div>
   );
 };

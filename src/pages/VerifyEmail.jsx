@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState,useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import apiClient from '../utils/apiClient';
 import NotificationModal from '../components/NotificationModal';
@@ -8,6 +8,7 @@ const VerifyEmail = () => {
     const navigate = useNavigate();
     const [status, setStatus] = useState('verifying');
     const [message, setMessage] = useState('');
+    const hasVerified = useRef(false);
     const [modalState, setModalState] = useState({
         isOpen: true,
         type: 'loading',
@@ -15,6 +16,8 @@ const VerifyEmail = () => {
     });
 
     useEffect(() => {
+        if (hasVerified.current) return;
+        hasVerified.current = true;
         const verify = async () => {
             const token = searchParams.get('token');
             const type = searchParams.get('type'); // 'authority' or 'admin'
