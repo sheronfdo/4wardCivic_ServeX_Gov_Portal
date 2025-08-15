@@ -111,10 +111,10 @@ const Layout = () => {
             );
           })}
         </nav>
-        <div className="p-4 border-t border-indigo-700">
+        <div className="p-4 mt-auto mt-20">
           <button
             onClick={handleLogoutClick}
-            className="w-full py-2 px-4 bg-red-600 hover:bg-red-700 rounded"
+            className="w-full py-2 px-4 bg-red-600 hover:bg-red-700 rounded-lg text-white flex items-center justify-center space-x-2 transition-colors"
           >
             Logout
           </button>

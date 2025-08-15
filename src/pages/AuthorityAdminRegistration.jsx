@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState ,useContext} from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import apiClient from '../utils/apiClient';
 import NotificationModal from '../components/NotificationModal';
+import { AuthContext } from '../context/AuthContext';
 
 const AdminRegistrationForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const authorityId = location.state?.authorityId;
+  const {token} = useContext(AuthContext);
 
   const [email, setEmail] = useState('');
   const [authorityadminName, setauthorityadminName] = useState('');
@@ -43,7 +45,7 @@ const AdminRegistrationForm = () => {
         password: password,
         authority_id: authorityId,
         // authority_email:authorityEmail,
-      });
+      },token);
       if (adminRes.user) {
         if (adminRes.is_verification_needed) {
           setModalState({

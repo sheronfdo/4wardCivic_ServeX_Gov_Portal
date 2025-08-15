@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState,useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building2, Upload } from 'lucide-react';
 import apiClient from '../utils/apiClient';
 import NotificationModal from '../components/NotificationModal';
+import { AuthContext } from '../context/AuthContext';
 
 const AuthorityRegistrationForm = () => {
   const navigate = useNavigate();
+  const {token} = useContext(AuthContext);
   const [formData, setFormData] = useState({
     authorityName: '',
     email: '',
@@ -46,7 +48,7 @@ const AuthorityRegistrationForm = () => {
 
       const mediaRes = await apiClient.post('/media/upload', mediaForm, {
         headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      },token);
 
       if (mediaRes.data && mediaRes.data && mediaRes.data.id) {
         setFormData((prev) => ({
@@ -73,7 +75,7 @@ const AuthorityRegistrationForm = () => {
         phoneNumber: formData.phoneNumber,
         hotline: formData.hotline,
         authorityIconId: formData.authorityIconId, // send uploaded image ID
-      });
+      },token);
 
       if (authorityRes.authority_id) {
         console.log('Authority registered:', authorityRes);

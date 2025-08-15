@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useContext } from 'react';
 import { Plus, User, ArrowLeft, Eye, Edit, Trash2 } from 'lucide-react';
 import GoogleFormsClone from './AddForm';
 import apiClient from '../../utils/apiClient';
 import FormViewer from './ViewForm';
 import {ClockLoader} from 'react-spinners';
+import { AuthContext } from '../../context/AuthContext';
 // Update the main component to use the enhanced version
 const ManageForms = ({ onBack, serviceId }) => {
+  const {token} = useContext(AuthContext);
   const [serviceDetails, setServiceDetails] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingForm, setEditingForm] = useState(null);
@@ -29,8 +31,8 @@ const ManageForms = ({ onBack, serviceId }) => {
     if (!serviceId) return;
 
     const [res, formRes] = await Promise.all([
-      apiClient.get(`/service/services/${serviceId}`),
-      apiClient.get(`/form/forms/${serviceId}`)
+      apiClient.get(`/service/services/${serviceId}`,token),
+      apiClient.get(`/form/forms/${serviceId}`,token)
     ]);
 
     setServiceDetails(res);
@@ -108,7 +110,7 @@ useEffect(() => {
 
     try {
       // Call DELETE API
-      await apiClient.delete(`/form/${formId}`);
+      await apiClient.delete(`/form/${formId}`,token);
 
       // Remove the form from state after successful deletion
       setForms(forms.filter(form => form.id !== formId));

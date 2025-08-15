@@ -1,16 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState ,useContext} from 'react';
 import { Plus, Copy, Trash2, Image, Video, Palette, Eye, Send, MoreVertical, ArrowLeft } from 'lucide-react';
 import RichTextEditor from '../../context/RitchTextEditorContext';
 import apiClient from '../../utils/apiClient';
 import FormViewer from './ViewForm';
 import NotificationModal from '../NotificationModal';
+import { AuthContext } from '../../context/AuthContext';
 
 const GoogleFormsClone = ({ serviceId, onBack }) => {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [notificationType, setNotificationType] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [message, setMessage] = useState('');
- 
+  const {token} = useContext(AuthContext);
+
   const closeModal = () => setIsModalOpen(false);
 
 
@@ -70,7 +72,7 @@ const GoogleFormsClone = ({ serviceId, onBack }) => {
     };
 
     try {
-      const formRes = await apiClient.post('/form/create', formData);
+      const formRes = await apiClient.post('/form/create', formData,token);
 
       if (formRes.success) {
         setNotificationType('success');
@@ -105,7 +107,7 @@ const GoogleFormsClone = ({ serviceId, onBack }) => {
   try {
     const res = await apiClient.post('/media/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
-    });
+    },token);
 
     if (res.data && res.data.id) {
       const mediaId = res.data.id;

@@ -28,7 +28,7 @@ const Services = () => {
 
  const fetchServices = async () => {
   try {
-    const res = await apiClient.get('/service/services', token);
+    const res = await apiClient.get('/service/Authority/services', token);
     if (Array.isArray(res)) {
       setServices(res);
     } else {
@@ -74,11 +74,27 @@ const Services = () => {
     setShowViewService(true)
   };
 
-  const handleDelete = (serviceId) => {
-    if (window.confirm('Are you sure you want to delete this service?')) {
-      setServices(services.filter(service => service.id !== serviceId));
+  const handleDelete = async (serviceId) => {
+  try {
+    const confirmDelete = window.confirm('Are you sure you want to delete this service?');
+    
+    if (confirmDelete) { 
+      const response = await apiClient.delete(`/service/services/${serviceId}`,token );
+
+      const data = await response.json();
+      if (response.ok) {
+        console.log(data.message);
+        setServices(services.filter(service => service.id !== serviceId));
+      } else {
+        // Handle error
+        console.error(data.error);
+      }
     }
-  };
+  } catch (error) {
+    console.error('Error deleting service:', error);
+  }
+};
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

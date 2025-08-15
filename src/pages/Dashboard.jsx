@@ -1,174 +1,169 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import * as Chart from 'chart.js/auto';
-import Layout from '../components/Layout';
+import apiClient from '../utils/apiClient';
+import { AuthContext } from '../context/AuthContext';
 
+  const ServiceUsageChart = ({ chartData }) => {
+    const chartRef = useRef(null);
+    const chartInstance = useRef(null);
 
-// Chart Component
-const ServiceUsageChart = () => {
-  const chartRef = useRef(null);
-  const chartInstance = useRef(null);
+    useEffect(() => {
+      if (!chartData) return; // No data yet
 
-  useEffect(() => {
-    if (chartRef.current) {
-      const ctx = chartRef.current.getContext('2d');
-      if (ctx) {
+      if (chartRef.current) {
+        const ctx = chartRef.current.getContext('2d');
+        if (ctx) {
+          if (chartInstance.current) {
+            chartInstance.current.destroy();
+          }
+          console.log('chartData:', chartData.datasets); // Log the chart dat
+          chartInstance.current = new Chart.Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: chartData.labels || [],
+              datasets: chartData.datasets || {},
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  max: 100,
+                  ticks: {
+                    stepSize: 20,
+                    callback: (value) => value + '%',
+                  },
+                },
+                x: { grid: { display: false } },
+              },
+            },
+          });
+        }
+      }
+
+      return () => {
         if (chartInstance.current) {
           chartInstance.current.destroy();
         }
+      };
+    }, [chartData]); 
 
-        chartInstance.current = new Chart.Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: [
-              'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-              'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-            ],
-            datasets: [
-              {
-                label: 'Service Usage',
-                data: [65, 59, 80, 81, 56, 55, 70, 85, 75, 90, 95, 88],
-                backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                borderColor: 'rgba(59, 130, 246, 1)',
-                borderWidth: 1,
-                borderRadius: 4,
-              },
-              {
-                label: 'Applications',
-                data: [45, 49, 60, 71, 46, 45, 50, 65, 55, 70, 75, 68],
-                backgroundColor: 'rgba(34, 197, 94, 0.8)',
-                borderColor: 'rgba(34, 197, 94, 1)',
-                borderWidth: 1,
-                borderRadius: 4,
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: {
-                display: false,
-              },
-            },
-            scales: {
-              y: {
-                beginAtZero: true,
-                max: 100,
-                ticks: {
-                  stepSize: 20,
-                  callback: function (value) {
-                    return value + '%';
-                  },
-                },
-                grid: {
-                  color: 'rgba(0, 0, 0, 0.1)',
-                },
-              },
-              x: {
-                grid: {
-                  display: false,
-                },
-              },
-            },
-          },
-        });
-      }
-    }
-
-    return () => {
-      if (chartInstance.current) {
-        chartInstance.current.destroy();
-      }
-    };
-  }, []);
-
-  return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">Service Usage Trends</h3>
-      <p className="text-sm text-gray-600 mb-4">Monthly Service Applications</p>
-      <div className="h-64">
-        <canvas ref={chartRef}></canvas>
+    return (
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Service Usage Trends</h3>
+        <p className="text-sm text-gray-600 mb-4">Monthly Service Applications</p>
+        <div className="h-64">
+          <canvas ref={chartRef}></canvas>
+        </div>
       </div>
-    </div>
-  );
-};
-
-// Dashboard Component
-const Dashboard = () => {
-  const keyStats = [
-    {
-      title: 'Total Registered',
-      value: '1000',
-      subtitle: 'Up by 5 from last month',
-      color: 'bg-blue-500',
-    },
-    {
-      title: 'Active',
-      value: '75',
-      subtitle: 'Up by government',
-      color: 'bg-blue-600',
-    },
-    {
-      title: 'Pending',
-      value: '5',
-      subtitle: 'Pending from last month',
-      color: 'bg-blue-700',
-    },
-    {
-      title: 'Recent',
-      value: '25',
-      subtitle: 'New from today',
-      color: 'bg-blue-800',
-    },
-  ];
-
-  const activities = [
-    {
-      id: 1,
-      description: 'New Authority Daily Police Report Application',
-      timestamp: '2024-07-30 10:30 AM',
-      status: 'Approved',
-    },
-    {
-      id: 2,
-      description: 'Service User For Data Updated',
-      timestamp: '2024-07-30 09:30 PM',
-      status: 'Approved',
-    },
-    {
-      id: 3,
-      description: 'A New User Dan Pella Modified',
-      timestamp: '2024-07-30 08:30 PM',
-      status: 'Approved',
-    },
-    {
-      id: 4,
-      description: 'Authority City Hall Contract Updated',
-      timestamp: '2024-07-30 07:30 AM',
-      status: 'Approved',
-    },
-    {
-      id: 5,
-      description: 'New Admin Account for Department Of Town Planning',
-      timestamp: '2024-07-30 06:30 AM',
-      status: 'Approved',
-    },
-  ];
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Approved':
-        return 'bg-green-100 text-green-800';
-      case 'Pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'Completed':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+    );
   };
 
-  return (
+
+  // Dashboard Component
+  const Dashboard = () => {
+
+
+    const { token } = useContext(AuthContext);
+    const [fetchdata, setfetchdata] = useState({});
+
+    useEffect(() => {
+      fetchDataStats();
+    }, []);
+
+    const fetchDataStats = async () => {
+      try {
+        const servicesres = await apiClient.get('/dash/summary', token);
+        setfetchdata(servicesres.data);
+      } catch (error) {
+        console.error('Error fetching services:', error);
+        setfetchdata({});
+      }
+    };
+
+    useEffect(() => {
+      console.log(JSON.stringify(fetchdata, null, 2)); // Pretty print JSON
+    }, [fetchdata]);
+
+    const keyStats = [
+      {
+        title: 'Total Services',
+        value: fetchdata.summary?.total_services || '0',
+        subtitle: 'Up by 5 from last month',
+        color: 'bg-blue-500',
+      },
+      {
+        title: 'Active',
+        value: fetchdata.summary?.active_services || '0',
+        subtitle: 'Up by government',
+        color: 'bg-blue-600',
+      },
+      {
+        title: 'Pending',
+        value: fetchdata.summary?.pending_services || '0',
+        subtitle: 'Pending from last month',
+        color: 'bg-blue-700',
+      },
+      {
+        title: 'Recent',
+        value: fetchdata.summary?.recent_services || '0',
+        subtitle: 'New from today',
+        color: 'bg-blue-800',
+      },
+    ];
+
+
+    const activities = [
+      {
+        id: 1,
+        description: 'New Authority Daily Police Report Application',
+        timestamp: '2024-07-30 10:30 AM',
+        status: 'Approved',
+      },
+      {
+        id: 2,
+        description: 'Service User For Data Updated',
+        timestamp: '2024-07-30 09:30 PM',
+        status: 'Approved',
+      },
+      {
+        id: 3,
+        description: 'A New User Dan Pella Modified',
+        timestamp: '2024-07-30 08:30 PM',
+        status: 'Approved',
+      },
+      {
+        id: 4,
+        description: 'Authority City Hall Contract Updated',
+        timestamp: '2024-07-30 07:30 AM',
+        status: 'Approved',
+      },
+      {
+        id: 5,
+        description: 'New Admin Account for Department Of Town Planning',
+        timestamp: '2024-07-30 06:30 AM',
+        status: 'Approved',
+      },
+    ];
+
+    const getStatusColor = (status) => {
+      switch (status) {
+        case 'Approved':
+          return 'bg-green-100 text-green-800';
+        case 'Pending':
+          return 'bg-yellow-100 text-yellow-800';
+        case 'Completed':
+          return 'bg-blue-100 text-blue-800';
+        default:
+          return 'bg-gray-100 text-gray-800';
+      }
+    };
+
+    return (
       <div className="p-4 lg:p-6 space-y-6">
         {/* Welcome Section */}
         <div>
@@ -193,7 +188,7 @@ const Dashboard = () => {
         </div>
 
         {/* Charts Section */}
-        <ServiceUsageChart />
+        <ServiceUsageChart chartData={fetchdata.chart_data} />
 
         {/* Recent Activities */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -238,7 +233,7 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-  );
-};
+    );
+  };
 
 export default Dashboard;

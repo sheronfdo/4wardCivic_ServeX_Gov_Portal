@@ -1,12 +1,19 @@
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { ArrowLeft, Upload } from 'lucide-react';
 import apiClient from '../../utils/apiClient';
+import NotificationModal from '../NotificationModal';
 import ManageForms from '../Form/ManageForm';
+import { AuthContext } from '../../context/AuthContext';
 
 const AddService = ({ onBack, onServiceCreated }) => {
+  const { token } = useContext(AuthContext);
   const [uploading, setUploading] = useState(false); // for loading state
   const [selectedFileName, setSelectedFileName] = useState('');
+  const [notificationType, setNotificationType] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [message, setMessage] = useState('');
 
+  const closeModal = () => setIsModalOpen(false);
   const [formData, setFormData] = useState({
     serviceName: '',
     note: '',
@@ -31,14 +38,25 @@ const AddService = ({ onBack, onServiceCreated }) => {
         maxPeoplePerSlot: formData.maxPeoplePerSlot,
         kyc: formData.kyc,
         serviceIconId: formData.serviceIconId, // send uploaded image ID
-      });
+      }, token);
 
       if (serviceRes.id) {
-        console.log('Service created');
-        // Optionally reset form here
+        setNotificationType('success');
+        setMessage('Service created successfully!');
+        setTimeout(() => {
+          onBack();
+        }, 2000);
+
+      } else {
+        setNotificationType('error');
+        setMessage('Error: ' + serviceRes.data.message || 'Something went wrong!');
       }
     } catch (error) {
-      console.error('Error registering authority:', error);
+      console.error('Error creating form:', error);
+      setNotificationType('error');
+      setMessage('Error: ' + error.message || 'An unexpected error occurred');
+    } finally {
+      setIsModalOpen(true);
     }
   };
 
@@ -88,7 +106,7 @@ const AddService = ({ onBack, onServiceCreated }) => {
 
       const mediaRes = await apiClient.post('/media/upload', mediaForm, {
         headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      }, token);
 
       if (mediaRes.data && mediaRes.data && mediaRes.data.id) {
         setFormData((prev) => ({
@@ -251,12 +269,12 @@ const AddService = ({ onBack, onServiceCreated }) => {
             </div>
 
             <div className="flex items-center mt-4">
-              <input 
-                type="checkbox" 
-                id="kycMandatory" 
-                checked={formData.kyc} 
-                onChange={(e) => setFormData({ ...formData, kyc: e.target.checked })} 
-                className="mr-2 " 
+              <input
+                type="checkbox"
+                id="kycMandatory"
+                checked={formData.kyc}
+                onChange={(e) => setFormData({ ...formData, kyc: e.target.checked })}
+                className="mr-2 "
               />
               <label htmlFor="kycMandatory" className="text-m text-gray-700">KYC Mandatory</label>
             </div>
@@ -276,6 +294,12 @@ const AddService = ({ onBack, onServiceCreated }) => {
               >
                 Create Service
               </button>
+              <NotificationModal
+                type={notificationType}
+                message={message}
+                isOpen={isModalOpen}
+                onClose={closeModal}
+              />
             </div>
           </div>
         </div>
