@@ -182,6 +182,11 @@ useEffect(() => {
             <p className="text-gray-400 text-xs uppercase">KYC Required</p>
             <p className="mt-1 font-semibold text-gray-800">{serviceDetails.kyc ? "Yes" : "No"}</p>
           </div>
+
+          <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
+            <p className="text-gray-400 text-xs uppercase">KYC Required</p>
+            <p className="mt-1 font-semibold text-gray-800">{serviceDetails.physicalAttendance ? "Yes" : "No"}</p>
+          </div>
         </div>
       </div>
 
