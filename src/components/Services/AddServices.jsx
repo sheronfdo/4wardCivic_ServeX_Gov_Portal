@@ -21,6 +21,7 @@ const AddService = ({ onBack, onServiceCreated }) => {
     slotduration: '',
     maxPeoplePerSlot: '',
     kyc: false,
+    isPhysicalAttendance: false,
     startTime: '',
     endTime: '',
     serviceIconId: null,
@@ -37,6 +38,7 @@ const AddService = ({ onBack, onServiceCreated }) => {
         slotduration: formData.slotduration,
         maxPeoplePerSlot: formData.maxPeoplePerSlot,
         kyc: formData.kyc,
+        isPhysicalAttendance: formData.isPhysicalAttendance,
         serviceIconId: formData.serviceIconId, // send uploaded image ID
       }, token);
 
@@ -277,6 +279,16 @@ const AddService = ({ onBack, onServiceCreated }) => {
                 className="mr-2 "
               />
               <label htmlFor="kycMandatory" className="text-m text-gray-700">KYC Mandatory</label>
+            </div>
+            <div className="flex items-center mt-4">
+              <input
+                type="checkbox"
+                id="isPhysicalAttendance"
+                checked={formData.isPhysicalAttendance}
+                onChange={(e) => setFormData({ ...formData, isPhysicalAttendance: e.target.checked })}
+                className="mr-2 "
+              />
+              <label htmlFor="isPhysicalAttendance" className="text-m text-gray-700">Physical Attendance Required</label>
             </div>
 
             <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 pt-6">
