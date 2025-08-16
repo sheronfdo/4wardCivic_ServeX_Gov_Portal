@@ -1,7 +1,9 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { Search, Filter, ChevronDown, AlertTriangle } from 'lucide-react';
+import { Search, Filter, ChevronDown, AlertTriangle, Eye } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import apiClient from '../utils/apiClient';
+import { ClockLoader } from 'react-spinners';
+import FormViewerResponse from '../components/Form/viewfromwithrespose';
 
 const Task = () => {
   const { token } = useContext(AuthContext);
@@ -12,13 +14,17 @@ const Task = () => {
   const [currentRequestId, setCurrentRequestId] = useState(null);
   const [isUpdateFormVisible, setIsUpdateFormVisible] = useState(false);
   const [requestedData, setRequestedData] = useState([]);
+  const [loadingForm, setLoadingForm] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [selectedFormData, setSelectedFormData] = useState(null);
+  const [selectedResponseData, setSelectedResponseData] = useState(null);
 
   const getStatusColor = (status) => {
     switch ((status || '').toLowerCase()) {
       case 'pending':
         return 'bg-blue-100 text-blue-800';
       case 'in progress':
-      case 'in_progress': // Handle different formats
+      case 'in_progress':
         return 'bg-orange-100 text-orange-800';
       case 'done':
       case 'completed':
@@ -33,61 +39,70 @@ const Task = () => {
   }, []);
 
   const fetchDataRequestedService = async () => {
-  try {
-    const res = await apiClient.get('/servicerequested/requested', token);
-    console.log('Full API Response:', res.data);
+    try {
+      const res = await apiClient.get('/servicerequested/requested', token);
+      console.log('Full API Response:', res.data);
 
-    // The API returns an object with a 'data' property that contains the array
-    // Check if res.data.data exists and is an array, OR if res.data itself is an array
-    const dataArray = res.data.data || (Array.isArray(res.data) ? res.data : null);
-    
-    if (dataArray && Array.isArray(dataArray)) {
-      const mappedData = dataArray.map(item => {
-        // Get form IDs from form_responses
-        const formResponseIds = item.form_responses.map(formResponse => formResponse.form_id);
-        console.log('Form Response IDs:', formResponseIds);
+      const dataArray = res.data.data || (Array.isArray(res.data) ? res.data : null);
 
-        const service = item.service || {};
-        const user = item.user || {};
+      if (dataArray && Array.isArray(dataArray)) {
+        const mappedData = dataArray.map(item => {
+          const service = item.service || {};
+          const user = item.user || {};
 
-        return {
-          id: item.id || 'N/A', // Use the main item ID instead of form IDs
-          userName: user.name || user.email || 'Unknown User', // Use user.name or user.email
-          userEmail: user.email || 'N/A',
-          serviceName: service.service_name || 'Unknown Service', // Use service.title instead of service.service_name
-          submittedDate: item.created_at
-            ? new Date(item.created_at).toISOString().split('T')[0]
-            : 'N/A',
-          appointmentDate: item.appointment_date
-            ? new Date(item.appointment_date).toISOString().split('T')[0]
-            : 'N/A',
-          slotTime: item.slot_start_time && item.slot_end_time
-            ? `${new Date(item.slot_start_time).toLocaleTimeString()} - ${new Date(item.slot_end_time).toLocaleTimeString()}`
-            : 'N/A',
-          status: item.status || 'ACTIVE',
-          statusColor: getStatusColor(item.status || 'ACTIVE'),
-          formResponsesCount: item.form_responses_count || 0,
-          formResponses: item.form_responses || []
-        };
-      });
+          return {
+            id: item.id || 'N/A',
+            userName: user.name || user.email || 'Unknown User',
+            userEmail: user.email || 'N/A',
+            serviceName: service.service_name || 'Unknown Service',
+            submittedDate: item.created_at
+              ? new Date(item.created_at).toISOString().split('T')[0]
+              : 'N/A',
+            appointmentDate: item.appointment_date
+              ? new Date(item.appointment_date).toISOString().split('T')[0]
+              : 'N/A',
+            slotTime: item.slot_start_time && item.slot_end_time
+              ? `${new Date(item.slot_start_time).toLocaleTimeString()} - ${new Date(item.slot_end_time).toLocaleTimeString()}`
+              : 'N/A',
+            status: item.status || 'ACTIVE',
+            statusColor: getStatusColor(item.status || 'ACTIVE'),
+            formResponsesCount: item.form_responses_count || 0,
+            formResponses: item.form_responses || []
+          };
+        });
 
-      console.log('Mapped Data:', mappedData);
-      setRequestedData(mappedData);
-    } else {
-      console.log('No data found or invalid response structure');
+        console.log('Mapped Data:', mappedData);
+        setRequestedData(mappedData);
+      } else {
+        console.log('No data found or invalid response structure');
+        setRequestedData([]);
+      }
+    } catch (error) {
+      console.error('Error fetching services:', error);
       setRequestedData([]);
     }
-  } catch (error) {
-    console.error('Error fetching services:', error);
-    setRequestedData([]);
-  }
-};
+  };
 
+  const fetchFormData = async (form_id, responseData) => {
+    try {
+      setLoadingForm(true);
+      const formResponse = await apiClient.get(`/form/${form_id}`, token);
+      const fetchedFormData = formResponse; // Make sure to get .data from response
 
+      console.log('Form data fetched:', fetchedFormData);
+      console.log('Response data:', responseData);
 
-  useEffect(() => {
-    console.log(JSON.stringify(requestedData, null, 2)); // Pretty print JSON
-  }, [requestedData]);
+      setSelectedFormData(fetchedFormData);
+      setSelectedResponseData(responseData);
+      setIsPreviewOpen(true);
+
+    } catch (error) {
+      console.error('Error fetching form data:', error);
+      alert('Failed to load form. Please try again.');
+    } finally {
+      setLoadingForm(false);
+    }
+  };
 
   const filteredRequests = requestedData.filter(request => {
     const matchesSearch =
@@ -113,6 +128,16 @@ const Task = () => {
 
   const handleClose = () => {
     setIsUpdateFormVisible(false);
+  };
+
+  const handleViewForm = (request) => {
+    // Get the first form response (you might want to handle multiple form responses differently)
+    const firstFormResponse = request.formResponses[0];
+    if (firstFormResponse) {
+      fetchFormData(firstFormResponse.form_id, firstFormResponse.responses);
+    } else {
+      alert('No form responses found for this request.');
+    }
   };
 
   return (
@@ -197,12 +222,26 @@ const Task = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button
-                        onClick={() => handleUpdateStatus(request.id)}
-                        className="text-blue-600 hover:text-blue-800 font-medium"
-                      >
-                        Update Status
-                      </button>
+                      <div className="flex space-x-2 ml-4">
+                        <button
+                          onClick={() => handleViewForm(request)}
+                          className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded"
+                          title="View"
+                          disabled={loadingForm}
+                        >
+                          {loadingForm ? (
+                            <ClockLoader size={16} color="#3b82f6" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleUpdateStatus(request.id)}
+                          className="text-blue-600 hover:text-blue-800 font-medium"
+                        >
+                          Update Status
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -229,6 +268,25 @@ const Task = () => {
           )}
         </div>
       </div>
+
+      {/* Form Preview Modal */}
+      {isPreviewOpen && selectedFormData && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-auto relative">
+            <button
+              onClick={() => setIsPreviewOpen(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-xl font-bold z-10"
+            >
+              ✕
+            </button>
+            <FormViewerResponse
+              formData={selectedFormData.form}
+              responseData={selectedResponseData}
+            />
+          </div>
+        </div>
+      )}
+
 
       {/* Update Status Form */}
       {isUpdateFormVisible && (
