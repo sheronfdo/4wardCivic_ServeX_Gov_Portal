@@ -16,7 +16,7 @@ const ServiceUsageChart = ({ chartData }) => {
         if (chartInstance.current) {
           chartInstance.current.destroy();
         }
-        console.log('chartData:', chartData.datasets); // Log the chart dat
+        // console.log('chartData:', chartData.datasets); // Log the chart dat
         chartInstance.current = new Chart.Chart(ctx, {
           type: 'bar',
           data: {
@@ -71,19 +71,22 @@ const Dashboard = () => {
   const { token } = useContext(AuthContext);
   const [fetchdata, setfetchdata] = useState({});
   const [fetchpeek, setfetchpeek] = useState({})
+  const [requestedservic,setrequestedservic] = useState({})
   useEffect(() => {
     fetchDataStats();
   }, []);
 
   const fetchDataStats = async () => {
     try {
-      const [servicesres, peekRes] = await Promise.all([
+      const [servicesres, peekRes,requestedservicRes] = await Promise.all([
         apiClient.get("/dash/summary", token),
-        apiClient.get("/servicerequested/peek", token)
+        apiClient.get("/servicerequested/peek", token),
+        apiClient.get("/servicerequested/requested/count", token)
       ]);
       //const servicesres = await apiClient.get('/dash/summary', token);
       setfetchdata(servicesres.data);
       setfetchpeek(peekRes.peak_hours);
+      setrequestedservic(requestedservicRes)
     } catch (error) {
       console.error('Error fetching services:', error);
       setfetchdata({});
@@ -94,6 +97,10 @@ const Dashboard = () => {
     console.log(JSON.stringify(fetchdata, null, 2)); // Pretty print JSON
   }, [fetchdata]);
 
+  const topPeak = fetchpeek && fetchpeek.length > 0 
+  ? fetchpeek.reduce((max, curr) => (curr[1] > max[1] ? curr : max))[0] + "h"
+  : "0 h";
+  console.log(requestedservic.data)
   const keyStats = [
     {
       title: 'Total Services',
@@ -102,21 +109,21 @@ const Dashboard = () => {
       color: 'bg-blue-500',
     },
     {
-      title: 'Active',
-      value: fetchdata.summary?.active_services || '0',
+      title: 'Total Tasks',
+      value: requestedservic?.count ?? 0,
       subtitle: 'Up by government',
       color: 'bg-blue-600',
     },
     {
-      title: 'Pending',
-      value: fetchdata.summary?.pending_services || '0',
+      title: 'Total Form Requested',
+      value: requestedservic?.data?.[0]?.form_responses_count ?? 0,
       subtitle: 'Pending from last month',
       color: 'bg-blue-700',
     },
     {
-      title: 'Recent',
-      value: fetchdata.summary?.recent_services || '0',
-      subtitle: 'New from today',
+      title: 'Peak Booking Time',
+      value: topPeak,
+      subtitle: 'peak times booked',
       color: 'bg-blue-800',
     },
 
@@ -181,7 +188,7 @@ const Dashboard = () => {
         </div>
 
         {/* Peak Booking Box - Right Aligned */}
-        <div className="bg-gradient-to-br from-red-100 to-red-500 shadow-lg rounded-lg p-4 w-72 ml-4">
+        {/* <div className="bg-gradient-to-br from-red-100 to-red-500 shadow-lg rounded-lg p-4 w-72 ml-4">
           <h2 className="text-lg font-semibold text-red-800 mb-3">Peak Booking Time</h2>
           <div className="space-y-2">
             {fetchpeek && fetchpeek.length > 0 ? (
@@ -199,7 +206,7 @@ const Dashboard = () => {
               <p className="text-red-600 italic">No peak hours data available</p>
             )}
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Key Statistics */}
