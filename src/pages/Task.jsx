@@ -33,40 +33,57 @@ const Task = () => {
   }, []);
 
   const fetchDataRequestedService = async () => {
-    try {
-      const res = await apiClient.get('/service/services/requested', token);
-      console.log('Full API Response:', res.data);
+  try {
+    const res = await apiClient.get('/servicerequested/requested', token);
+    console.log('Full API Response:', res.data);
 
-      // Check if res.data is directly an array
-      if (res.data && Array.isArray(res.data)) {
-        const mappedData = res.data.map(item => {
-          // Safely access nested properties with fallbacks
-          const formResponse = item.form_response || {};
-          const service = item.service || {};
+    // The API returns an object with a 'data' property that contains the array
+    // Check if res.data.data exists and is an array, OR if res.data itself is an array
+    const dataArray = res.data.data || (Array.isArray(res.data) ? res.data : null);
+    
+    if (dataArray && Array.isArray(dataArray)) {
+      const mappedData = dataArray.map(item => {
+        // Get form IDs from form_responses
+        const formResponseIds = item.form_responses.map(formResponse => formResponse.form_id);
+        console.log('Form Response IDs:', formResponseIds);
 
-          return {
-            id: formResponse.id || 'N/A',
-            userName: formResponse.respondent_email || 'Unknown User',
-            serviceName: service.service_name || 'Unknown Service',
-            submittedDate: formResponse.submitted_at
-              ? new Date(formResponse.submitted_at).toISOString().split('T')[0]
-              : 'N/A',
-            status: item.status || 'Pending', // Use item.status if available, fallback to 'Pending'
-            statusColor: getStatusColor(item.status || 'Pending')
-          };
-        });
+        const service = item.service || {};
+        const user = item.user || {};
 
-        console.log('Mapped Data:', mappedData);
-        setRequestedData(mappedData);
-      } else {
-        console.log('No data found or invalid response structure');
-        setRequestedData([]);
-      }
-    } catch (error) {
-      console.error('Error fetching services:', error);
+        return {
+          id: item.id || 'N/A', // Use the main item ID instead of form IDs
+          userName: user.name || user.email || 'Unknown User', // Use user.name or user.email
+          userEmail: user.email || 'N/A',
+          serviceName: service.service_name || 'Unknown Service', // Use service.title instead of service.service_name
+          submittedDate: item.created_at
+            ? new Date(item.created_at).toISOString().split('T')[0]
+            : 'N/A',
+          appointmentDate: item.appointment_date
+            ? new Date(item.appointment_date).toISOString().split('T')[0]
+            : 'N/A',
+          slotTime: item.slot_start_time && item.slot_end_time
+            ? `${new Date(item.slot_start_time).toLocaleTimeString()} - ${new Date(item.slot_end_time).toLocaleTimeString()}`
+            : 'N/A',
+          status: item.status || 'ACTIVE',
+          statusColor: getStatusColor(item.status || 'ACTIVE'),
+          formResponsesCount: item.form_responses_count || 0,
+          formResponses: item.form_responses || []
+        };
+      });
+
+      console.log('Mapped Data:', mappedData);
+      setRequestedData(mappedData);
+    } else {
+      console.log('No data found or invalid response structure');
       setRequestedData([]);
     }
-  };
+  } catch (error) {
+    console.error('Error fetching services:', error);
+    setRequestedData([]);
+  }
+};
+
+
 
   useEffect(() => {
     console.log(JSON.stringify(requestedData, null, 2)); // Pretty print JSON

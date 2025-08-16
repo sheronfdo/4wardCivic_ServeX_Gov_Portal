@@ -1,18 +1,20 @@
-import React, { useState, useEffect,useContext } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Plus, User, ArrowLeft, Eye, Edit, Trash2 } from 'lucide-react';
 import GoogleFormsClone from './AddForm';
 import apiClient from '../../utils/apiClient';
 import FormViewer from './ViewForm';
-import {ClockLoader} from 'react-spinners';
+import { ClockLoader } from 'react-spinners';
 import { AuthContext } from '../../context/AuthContext';
 // Update the main component to use the enhanced version
 const ManageForms = ({ onBack, serviceId }) => {
-  const {token} = useContext(AuthContext);
+  const { token } = useContext(AuthContext);
   const [serviceDetails, setServiceDetails] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingForm, setEditingForm] = useState(null);
   const [forms, setForms] = useState([]);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [selectedFormData, setSelectedFormData] = useState([null]);
+  const [loadingForm, setLoadingForm] = useState(false);
   // useEffect(() => {
   //   if (!serviceId) return;
   //   apiClient.get(`/service/services/${serviceId}`)
@@ -27,24 +29,43 @@ const ManageForms = ({ onBack, serviceId }) => {
   // }, [serviceId]);
 
   const fetchServiceandForm = async () => {
-  try {
-    if (!serviceId) return;
+    try {
+      if (!serviceId) return;
 
-    const [res, formRes] = await Promise.all([
-      apiClient.get(`/service/services/${serviceId}`,token),
-      apiClient.get(`/form/forms/${serviceId}`,token)
-    ]);
+      const [res, formRes] = await Promise.all([
+        apiClient.get(`/service/services/${serviceId}`, token),
+        apiClient.get(`/form/forms/${serviceId}`, token)
+      ]);
 
-    setServiceDetails(res);
-    setForms(formRes.forms);
-  } catch (err) {
-    console.error('Error fetching service or forms:', err);
-  }
-};
+      setServiceDetails(res);
+      setForms(formRes.forms);
+    } catch (err) {
+      console.error('Error fetching service or forms:', err);
+    }
+  };
 
-useEffect(() => {
-  fetchServiceandForm();
-}, [serviceId]);
+  useEffect(() => {
+    fetchServiceandForm();
+  }, [serviceId]);
+
+  const fetchFormData = async (formId) => {
+    try {
+      setLoadingForm(true);
+      const formData = await apiClient.get(`/form/${formId}`, token);
+      const fetchedFormData = formData;
+      
+      setSelectedFormData(fetchedFormData);
+      console.log('Form data fetched:', fetchedFormData); // Log the actual data
+      setIsPreviewOpen(true);
+    } catch (error) {
+      console.error('Error fetching form data:', error);
+      alert('Failed to load form. Please try again.');
+    } finally {
+      setLoadingForm(false);
+    }
+  };
+
+  
 
   if (!serviceId) {
     return <div>No service selected.</div>;
@@ -52,13 +73,13 @@ useEffect(() => {
 
   if (!serviceDetails) {
     return <ClockLoader
-        className="mx-auto my-40"
-        color="#3b82f6"
-        loading={true}
-        size={122}
-        aria-label="Loading Spinner"
-        data-testid="loader"
-      />;
+      className="mx-auto my-40"
+      color="#3b82f6"
+      loading={true}
+      size={122}
+      aria-label="Loading Spinner"
+      data-testid="loader"
+    />;
   }
 
 
@@ -97,7 +118,7 @@ useEffect(() => {
   };
 
   const handleViewForm = (form) => {
-    setIsPreviewOpen(true);
+    fetchFormData(form.id);
   };
 
   const handleEditForm = (form) => {
@@ -110,7 +131,7 @@ useEffect(() => {
 
     try {
       // Call DELETE API
-      await apiClient.delete(`/form/${formId}`,token);
+      await apiClient.delete(`/form/${formId}`, token);
 
       // Remove the form from state after successful deletion
       setForms(forms.filter(form => form.id !== formId));
@@ -232,10 +253,15 @@ useEffect(() => {
                       onClick={() => handleViewForm(form)}
                       className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded"
                       title="View"
+                      disabled={loadingForm}
                     >
-                      <Eye className="w-4 h-4" />
+                      {loadingForm ? (
+                        <ClockLoader size={16} color="#3b82f6" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
                     </button>
-                    {isPreviewOpen && (
+                    {isPreviewOpen && selectedFormData && (
                       <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
                         <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-3xl relative">
                           <button
@@ -244,7 +270,7 @@ useEffect(() => {
                           >
                             ✕
                           </button>
-                          <FormViewer formData={form} />
+                          <FormViewer formData={selectedFormData.form} />
                         </div>
                       </div>
                     )}
