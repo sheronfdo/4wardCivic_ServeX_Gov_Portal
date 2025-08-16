@@ -65,8 +65,6 @@ const ManageForms = ({ onBack, serviceId }) => {
     }
   };
 
-  
-
   if (!serviceId) {
     return <div>No service selected.</div>;
   }
@@ -171,7 +169,7 @@ const ManageForms = ({ onBack, serviceId }) => {
       <div className="flex items-start space-x-4 mb-8">
         <div className="flex items-center space-x-6 mb-6">
           <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center">
-            <User className="w-10 h-10 text-blue-600" />
+            <img className="w-10 h-10 text-blue-600" src={serviceDetails.service_icon.file_path} alt="description" />
           </div>
           <div>
             <h1 className="text-3xl font-bold text-blue-600">
