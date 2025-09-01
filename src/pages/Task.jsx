@@ -1,9 +1,10 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { Search, Filter, ChevronDown, AlertTriangle, Eye } from 'lucide-react';
+import { Search, Filter, ChevronDown, AlertTriangle, Eye ,KanbanSquareDashed} from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import apiClient from '../utils/apiClient';
 import { ClockLoader } from 'react-spinners';
 import FormViewerResponse from '../components/Form/viewfromwithrespose';
+import KanbanBoard from '../components/ServexKanban';
 
 const Task = () => {
   const { token } = useContext(AuthContext);
@@ -18,6 +19,7 @@ const Task = () => {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [selectedFormData, setSelectedFormData] = useState(null);
   const [selectedResponseData, setSelectedResponseData] = useState(null);
+  const [showKanbanBord, setshowKanbanBord] = useState(false);
 
   const getStatusColor = (status) => {
     switch ((status || '').toLowerCase()) {
@@ -82,7 +84,10 @@ const Task = () => {
       setRequestedData([]);
     }
   };
-
+  const handleBackToServices = () => {
+    setshowKanbanBord(false);
+    fetchDataRequestedService();
+  };
   const fetchFormData = async (form_id, responseData) => {
     try {
       setLoadingForm(true);
@@ -139,7 +144,17 @@ const Task = () => {
       alert('No form responses found for this request.');
     }
   };
+  const handleKanban = () => {
+    setshowKanbanBord(true)
+  };
 
+  if (showKanbanBord) {
+    return (
+      <KanbanBoard
+        onBack={handleBackToServices}
+      />
+    )
+  }
   return (
     <div className="p-4 lg:p-6 space-y-6">
       {/* Header Section */}
@@ -147,6 +162,13 @@ const Task = () => {
         <h1 className="text-2xl lg:text-3xl font-bold text-gray-800">
           View User Submitted Service Requests
         </h1>
+        <button
+          onClick={() => handleKanban()}
+          className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded"
+          title="KnabanBord"
+        >
+          <KanbanSquareDashed className="w-10 h-10" />
+        </button>
       </div>
 
       {/* Search and Filters */}

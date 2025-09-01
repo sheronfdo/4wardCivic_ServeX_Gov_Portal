@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useContext } from 'react';
 import * as Chart from 'chart.js/auto';
 import apiClient from '../utils/apiClient';
 import { AuthContext } from '../context/AuthContext';
-
+import RoleBasedProtected from '../components/RoleBasedProtected';
 const ServiceUsageChart = ({ chartData }) => {
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
@@ -68,10 +68,12 @@ const ServiceUsageChart = ({ chartData }) => {
 const Dashboard = () => {
 
 
-  const { token } = useContext(AuthContext);
+  const { token ,user} = useContext(AuthContext);
   const [fetchdata, setfetchdata] = useState({});
   const [fetchpeek, setfetchpeek] = useState({})
   const [requestedservic,setrequestedservic] = useState({})
+  const userRole = user?.role || 'GovAdmin'; 
+  
   useEffect(() => {
     fetchDataStats();
   }, []);
@@ -181,10 +183,18 @@ const Dashboard = () => {
       {/* Welcome Section */}
       <div className="flex justify-between items-start">
         <div>
+          <RoleBasedProtected userRole={userRole} allowedRoles={['GovAdmin']}>
           <h1 className="text-2xl lg:text-3xl font-bold text-gray-800">Welcome, Administrator!</h1>
           <p className="text-gray-600 mt-1">
             Create your administrator account for the Government Authority Portal
           </p>
+          </RoleBasedProtected>
+          <RoleBasedProtected userRole={userRole} allowedRoles={['GovStaff']}>
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-800">Welcome, Staff Member!</h1>
+          <p className="text-gray-600 mt-1">
+            Access your staff dashboard for daily operations and service management
+          </p>
+          </RoleBasedProtected>
         </div>
 
         {/* Peak Booking Box - Right Aligned */}

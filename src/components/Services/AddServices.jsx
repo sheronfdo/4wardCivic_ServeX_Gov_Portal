@@ -4,15 +4,18 @@ import apiClient from '../../utils/apiClient';
 import NotificationModal from '../NotificationModal';
 import ManageForms from '../Form/ManageForm';
 import { AuthContext } from '../../context/AuthContext';
+import ProcessRoleForm from './AddProcess';
 
 const AddService = ({ onBack, onServiceCreated }) => {
   const { token } = useContext(AuthContext);
-  const [uploading, setUploading] = useState(false); // for loading state
+  const [uploading, setUploading] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState('');
   const [notificationType, setNotificationType] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [message, setMessage] = useState('');
-
+  
+  // Add state for process data
+  const [processData, setProcessData] = useState([{ process: '', role: '' }]);
   const closeModal = () => setIsModalOpen(false);
   const [formData, setFormData] = useState({
     serviceName: '',
@@ -39,7 +42,8 @@ const AddService = ({ onBack, onServiceCreated }) => {
         maxPeoplePerSlot: formData.maxPeoplePerSlot,
         kyc: formData.kyc,
         isPhysicalAttendance: formData.isPhysicalAttendance,
-        serviceIconId: formData.serviceIconId, // send uploaded image ID
+        serviceIconId: formData.serviceIconId,
+        processes: processData, // Add process data to the submission
       }, token);
 
       if (serviceRes.id) {
@@ -48,13 +52,12 @@ const AddService = ({ onBack, onServiceCreated }) => {
         setTimeout(() => {
           onBack();
         }, 2000);
-
       } else {
         setNotificationType('error');
         setMessage('Error: ' + serviceRes.data.message || 'Something went wrong!');
       }
     } catch (error) {
-      console.error('Error creating form:', error);
+      console.error('Error creating service:', error);
       setNotificationType('error');
       setMessage('Error: ' + error.message || 'An unexpected error occurred');
     } finally {
@@ -82,10 +85,11 @@ const AddService = ({ onBack, onServiceCreated }) => {
       endTime: '',
       serviceIconId: null,
     });
+    // Reset process data as well
+    setProcessData([{ process: '', role: '' }]);
     onBack();
   };
 
-  // Fixed time change handler
   const handleTimeChange = (e, timeField) => {
     const { value } = e.target;
     setFormData(prev => ({
@@ -94,7 +98,6 @@ const AddService = ({ onBack, onServiceCreated }) => {
     }));
   };
 
-  // Handle file selection & immediate upload
   const handleFileUpload = async (e) => {
     const file = e.target.files ? e.target.files[0] : null;
     if (!file) return;
@@ -113,7 +116,7 @@ const AddService = ({ onBack, onServiceCreated }) => {
       if (mediaRes.data && mediaRes.data && mediaRes.data.id) {
         setFormData((prev) => ({
           ...prev,
-          serviceIconId: mediaRes.data.id, // save image ID
+          serviceIconId: mediaRes.data.id,
         }))
       } else {
         console.error('Upload response missing id:', mediaRes);
@@ -269,6 +272,17 @@ const AddService = ({ onBack, onServiceCreated }) => {
                 />
               </div>
             </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-1 gap-4 lg:gap-6">
+              <div className="border p-4 rounded-lg bg-blue-30">
+                <h5 className="text-xl font-semibold mb-4">Create the Process Structure for Service</h5>
+                {/* Pass processData and setProcessData as props */}
+                <ProcessRoleForm 
+                  processData={processData}
+                  setProcessData={setProcessData}
+                />
+              </div>
+            </div>
 
             <div className="flex items-center mt-4">
               <input
@@ -280,6 +294,7 @@ const AddService = ({ onBack, onServiceCreated }) => {
               />
               <label htmlFor="kycMandatory" className="text-m text-gray-700">KYC Mandatory</label>
             </div>
+            
             <div className="flex items-center mt-4">
               <input
                 type="checkbox"

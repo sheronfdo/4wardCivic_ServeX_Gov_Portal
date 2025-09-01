@@ -1,5 +1,5 @@
-import React, { useState ,useContext} from 'react';
-import { Plus, Copy, Trash2, Image, Video, Palette, Eye, Send, MoreVertical, ArrowLeft } from 'lucide-react';
+import React, { useState, useContext } from 'react';
+import { Plus, Copy, Trash2, Image, Video, Palette, Eye, Send, MoreVertical, ArrowLeft, Upload } from 'lucide-react';
 import RichTextEditor from '../../context/RitchTextEditorContext';
 import apiClient from '../../utils/apiClient';
 import FormViewer from './ViewForm';
@@ -11,7 +11,7 @@ const GoogleFormsClone = ({ serviceId, onBack }) => {
   const [notificationType, setNotificationType] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [message, setMessage] = useState('');
-  const {token} = useContext(AuthContext);
+  const { token } = useContext(AuthContext);
 
   const closeModal = () => setIsModalOpen(false);
 
@@ -33,6 +33,11 @@ const GoogleFormsClone = ({ serviceId, onBack }) => {
         minLabel: '',
         maxLabel: '',
         media_id: null,
+
+        fileUploadType: 'any',
+        maxFileSize: 10,
+        // allowedFileTypes: [],
+        customFileTypes: ''
       }
     ]
   });
@@ -47,7 +52,8 @@ const GoogleFormsClone = ({ serviceId, onBack }) => {
     { value: 'paragraph', label: 'Paragraph' },
     { value: 'linear-scale', label: 'Linear scale' },
     { value: 'date', label: 'Date' },
-    { value: 'time', label: 'Time' }
+    { value: 'time', label: 'Time' },
+    { value: 'file-upload', label: 'File upload' }
   ];
 
   // Function to export form data as JSON (ready for backend)
@@ -68,11 +74,16 @@ const GoogleFormsClone = ({ serviceId, onBack }) => {
         minLabel: q.minLabel,
         maxLabel: q.maxLabel,
         mediaId: q.media_id || null,
+
+        fileUploadType: q.fileUploadType,
+        maxFileSize: q.maxFileSize,
+        // allowedFileTypes: q.allowedFileTypes,
+        customFileTypes: q.customFileTypes
       }))
     };
 
     try {
-      const formRes = await apiClient.post('/form/create', formData,token);
+      const formRes = await apiClient.post('/form/create', formData, token);
 
       if (formRes.success) {
         setNotificationType('success');
@@ -98,34 +109,34 @@ const GoogleFormsClone = ({ serviceId, onBack }) => {
 
   // Handle file selection & immediate upload
   const handleFileSelect = async (event, questionId) => {
-  const file = event.target.files[0];
-  if (!file) return;
+    const file = event.target.files[0];
+    if (!file) return;
 
-  const formData = new FormData();
-  formData.append('file', file);
+    const formData = new FormData();
+    formData.append('file', file);
 
-  try {
-    const res = await apiClient.post('/media/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    },token);
+    try {
+      const res = await apiClient.post('/media/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      }, token);
 
-    if (res.data && res.data.id) {
-      const mediaId = res.data.id;
-      const mediaUrl = res.data.file_path;
-      // Update the selected question with media info
-      setForm(prev => ({
-        ...prev,
-        questions: prev.questions.map(q =>
-          q.id === questionId
-            ? { ...q, media_id: mediaId, previewImage: mediaUrl }
-            : q
-        )
-      }));
+      if (res.data && res.data.id) {
+        const mediaId = res.data.id;
+        const mediaUrl = res.data.file_path;
+        // Update the selected question with media info
+        setForm(prev => ({
+          ...prev,
+          questions: prev.questions.map(q =>
+            q.id === questionId
+              ? { ...q, media_id: mediaId, previewImage: mediaUrl }
+              : q
+          )
+        }));
+      }
+    } catch (err) {
+      console.error('Error uploading file:', err);
     }
-  } catch (err) {
-    console.error('Error uploading file:', err);
-  }
-};
+  };
 
 
 
@@ -141,7 +152,12 @@ const GoogleFormsClone = ({ serviceId, onBack }) => {
       scaleMax: 5,
       minLabel: '',
       maxLabel: '',
-      mediaId: null
+      mediaId: null,
+
+      fileUploadType: 'any',
+      maxFileSize: 10,
+      // allowedFileTypes: [],
+      customFileTypes: ''
     };
     setForm(prev => ({
       ...prev,
@@ -173,7 +189,7 @@ const GoogleFormsClone = ({ serviceId, onBack }) => {
           }
 
           // Reset hasOther for types that don't support it
-          if (['dropdown', 'linear-scale', 'date', 'time', 'short-answer', 'paragraph'].includes(newType)) {
+          if (['dropdown', 'linear-scale', 'date', 'time', 'short-answer', 'paragraph', 'file-upload'].includes(newType)) {
             updatedQuestion.hasOther = false;
           }
 
@@ -185,11 +201,50 @@ const GoogleFormsClone = ({ serviceId, onBack }) => {
             updatedQuestion.maxLabel = updatedQuestion.maxLabel || '';
           }
 
+          if (newType === 'file-upload') {
+            updatedQuestion.fileUploadType = updatedQuestion.fileUploadType || 'any';
+            updatedQuestion.maxFileSize = updatedQuestion.maxFileSize || 10;
+            // updatedQuestion.allowedFileTypes = updatedQuestion.allowedFileTypes || [];
+            updatedQuestion.customFileTypes = updatedQuestion.customFileTypes || '';
+          }
+
           return updatedQuestion;
         }
         return q;
       })
     }));
+  };
+
+  const getAcceptedFileTypes = (fileUploadType, customFileTypes) => {
+    const fileTypeMap = {
+      'images': '.jpg,.jpeg,.png,.gif,.bmp,.svg,.webp',
+      'pdf': '.pdf',
+      'audio': '.mp3,.wav,.ogg,.m4a,.aac,.flac',
+      'video': '.mp4,.avi,.mov,.wmv,.flv,.webm,.mkv',
+      'documents': '.doc,.docx,.txt,.rtf,.odt',
+      'spreadsheets': '.xls,.xlsx,.csv,.ods',
+      'presentations': '.ppt,.pptx,.odp',
+      'archives': '.zip,.rar,.7z,.tar,.gz',
+      'custom': customFileTypes,
+      'any': '*'
+    };
+
+    return fileTypeMap[fileUploadType] || '*';
+  };
+  const getFileTypeName = (type) => {
+    const names = {
+      'images': 'Images only',
+      'pdf': 'PDF only',
+      'audio': 'Audio files only',
+      'video': 'Video files only',
+      'documents': 'Document files only',
+      'spreadsheets': 'Spreadsheet files only',
+      'presentations': 'Presentation files only',
+      'archives': 'Archive files only',
+      'custom': 'Custom file types',
+      'any': 'Any file type'
+    };
+    return names[type] || 'Any file type';
   };
 
   const addOption = (questionId) => {
@@ -533,6 +588,84 @@ const GoogleFormsClone = ({ serviceId, onBack }) => {
           {question.type === 'paragraph' && (
             <div className="border border-gray-300 rounded p-3 text-gray-500">
               Long answer text
+            </div>
+          )}
+
+          {question.type === 'file-upload' && (
+            <div className="space-y-4">
+              {/* File Upload Preview */}
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50">
+                <div className="flex flex-col items-center">
+                  <Upload className="w-12 h-12 text-gray-400 mb-4" />
+                  <p className="text-gray-600 mb-2">Click to upload or drag and drop</p>
+                  <p className="text-sm text-gray-500">
+                    {getFileTypeName(question.fileUploadType)} • Max {question.maxFileSize}MB
+                  </p>
+                </div>
+              </div>
+
+              {/* File Upload Settings */}
+              <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+                <div className="text-sm font-medium text-gray-700 mb-3">File Upload Settings:</div>
+
+                {/* File Type Restriction */}
+                <div className="flex items-center gap-4">
+                  <label className="text-sm text-gray-700 min-w-[100px]">File types:</label>
+                  <select
+                    value={question.fileUploadType}
+                    onChange={(e) => updateQuestion(question.id, 'fileUploadType', e.target.value)}
+                    className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 flex-1 max-w-xs"
+                  >
+                    <option value="any">Any file type</option>
+                    <option value="images">Images only</option>
+                    <option value="pdf">PDF only</option>
+                    <option value="audio">Audio files only</option>
+                    <option value="video">Video files only</option>
+                    <option value="documents">Document files only</option>
+                    <option value="spreadsheets">Spreadsheet files only</option>
+                    <option value="presentations">Presentation files only</option>
+                    <option value="archives">Archive files only</option>
+                    <option value="custom">Custom file types</option>
+                  </select>
+                </div>
+
+                {/* Custom File Types Input */}
+                {question.fileUploadType === 'custom' && (
+                  <div className="flex items-center gap-4">
+                    <label className="text-sm text-gray-700 min-w-[100px]">Custom types:</label>
+                    <input
+                      type="text"
+                      value={question.customFileTypes}
+                      onChange={(e) => updateQuestion(question.id, 'customFileTypes', e.target.value)}
+                      placeholder="e.g., .txt,.json,.xml"
+                      className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 flex-1 max-w-xs"
+                    />
+                    <span className="text-xs text-gray-500">Separate with commas</span>
+                  </div>
+                )}
+
+                {/* Max File Size */}
+                <div className="flex items-center gap-4">
+                  <label className="text-sm text-gray-700 min-w-[100px]">Max file size:</label>
+                  <select
+                    value={question.maxFileSize}
+                    onChange={(e) => updateQuestion(question.id, 'maxFileSize', parseInt(e.target.value))}
+                    className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                  >
+                    <option value={1}>1 MB</option>
+                    <option value={5}>5 MB</option>
+                    <option value={10}>10 MB</option>
+                    <option value={25}>25 MB</option>
+                    <option value={50}>50 MB</option>
+                    <option value={100}>100 MB</option>
+                  </select>
+                </div>
+
+                {/* File Type Preview */}
+                <div className="text-xs text-gray-500 bg-white p-2 rounded border">
+                  <strong>Accepted files:</strong> {getAcceptedFileTypes(question.fileUploadType, question.customFileTypes)}
+                </div>
+              </div>
             </div>
           )}
         </div>

@@ -11,7 +11,7 @@ function ProtectedRoute({ children }) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
-  if (!isAuthenticated || !user || user.role !== 'GovAdmin') {
+  if (!isAuthenticated || !user || (user.role !== 'GovAdmin' && user.role !== 'GovStaff')) {
     console.log('ProtectedRoute: Redirecting to /login'); // Debugging
     return <Navigate to="/login" replace />;
   }

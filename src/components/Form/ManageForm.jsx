@@ -4,7 +4,9 @@ import GoogleFormsClone from './AddForm';
 import apiClient from '../../utils/apiClient';
 import FormViewer from './ViewForm';
 import { ClockLoader } from 'react-spinners';
+import LoadingSpinner from '../LoadingSpiner';
 import { AuthContext } from '../../context/AuthContext';
+import ReactDOM from 'react-dom';
 // Update the main component to use the enhanced version
 const ManageForms = ({ onBack, serviceId }) => {
   const { token } = useContext(AuthContext);
@@ -27,7 +29,9 @@ const ManageForms = ({ onBack, serviceId }) => {
   //     .then(formres => setForms(formres.forms))
   //     .catch(err => console.error('Error fetching service details:', err));
   // }, [serviceId]);
-
+  const ModalPortal = ({ children }) => {
+    return ReactDOM.createPortal(children, document.body);
+  };
   const fetchServiceandForm = async () => {
     try {
       if (!serviceId) return;
@@ -53,7 +57,7 @@ const ManageForms = ({ onBack, serviceId }) => {
       setLoadingForm(true);
       const formData = await apiClient.get(`/form/${formId}`, token);
       const fetchedFormData = formData;
-      
+
       setSelectedFormData(fetchedFormData);
       console.log('Form data fetched:', fetchedFormData); // Log the actual data
       setIsPreviewOpen(true);
@@ -70,14 +74,15 @@ const ManageForms = ({ onBack, serviceId }) => {
   }
 
   if (!serviceDetails) {
-    return <ClockLoader
-      className="mx-auto my-40"
-      color="#3b82f6"
-      loading={true}
-      size={122}
-      aria-label="Loading Spinner"
-      data-testid="loader"
-    />;
+    return <LoadingSpinner/>
+    // return <ClockLoader
+    //   className="mx-auto my-40"
+    //   color="#3b82f6"
+    //   loading={true}
+    //   size={122}
+    //   aria-label="Loading Spinner"
+    //   data-testid="loader"
+    // />;
   }
 
 
@@ -265,17 +270,25 @@ const ManageForms = ({ onBack, serviceId }) => {
                       )}
                     </button>
                     {isPreviewOpen && selectedFormData && (
-                      <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-                        <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-3xl relative">
-                          <button
-                            onClick={() => setIsPreviewOpen(false)}
-                            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-                          >
-                            ✕
-                          </button>
-                          <FormViewer formData={selectedFormData.form} />
+                      <ModalPortal>
+                        <div className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-[9999] p-4">
+                          <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl h-[90vh] flex flex-col relative">
+                            {/* Modal Header - Fixed */}
+                            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white rounded-t-lg">
+                              <h2 className="text-lg font-semibold text-gray-800">Form Preview</h2>
+                              <button
+                                onClick={() => setIsPreviewOpen(false)}
+                                className="text-gray-500 hover:text-gray-700 text-2xl leading-none p-1"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-0">
+                              <FormViewer formData={selectedFormData.form} />
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      </ModalPortal>
                     )}
 
                     <button
